@@ -4,8 +4,8 @@ services:
     name: ai-helpdesk-frontend
     env: node
     plan: free
-    buildCommand: npm install && cd frontend && npm run build
-    startCommand: cd frontend && npm start
+    buildCommand: cd frontend-standalone && npm install && npm run build
+    startCommand: cd frontend-standalone && npm start
     envVars:
       - key: NODE_ENV
         value: production
