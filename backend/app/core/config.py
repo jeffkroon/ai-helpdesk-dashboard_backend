@@ -1,4 +1,4 @@
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 from typing import Optional
 import os
 from dotenv import load_dotenv
@@ -19,7 +19,6 @@ class Settings(BaseSettings):
     # Cache TTL in minutes
     cache_ttl_minutes: int = 5
     
-    class Config:
-        env_file = ".env"
+    model_config = {"env_file": ".env"}
 
 settings = Settings()
