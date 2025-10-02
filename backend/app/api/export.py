@@ -9,17 +9,47 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 
+def normalize_date_format(date_str: str) -> str:
+    """Convert date string to ISO-8601 format with time if needed"""
+    if not date_str:
+        return date_str
+    
+    # If it's already in ISO format with time, return as is
+    if 'T' in date_str and ('Z' in date_str or '+' in date_str):
+        return date_str
+    
+    # If it's just a date (YYYY-MM-DD), add time
+    if len(date_str) == 10 and date_str.count('-') == 2:
+        if date_str.endswith('T00:00:00.000Z'):
+            return date_str
+        elif 'T' in date_str:
+            # Already has time, just ensure Z suffix
+            return date_str if date_str.endswith('Z') else f"{date_str}Z"
+        else:
+            # Just date, add start of day
+            return f"{date_str}T00:00:00.000Z"
+    
+    # If it's a datetime without timezone, add Z
+    if 'T' in date_str and not date_str.endswith('Z') and '+' not in date_str:
+        return f"{date_str}Z"
+    
+    return date_str
+
 router = APIRouter()
 
 @router.post("/")
 async def export_report(request: ExportRequest):
     """Export analytics report in CSV or PDF format"""
     try:
+        # Normalize date formats to ISO-8601 with time
+        start_date = normalize_date_format(request.start)
+        end_date = normalize_date_format(request.end)
+        
         # Get data from Voiceflow API
         data = await voiceflow_client.get_analytics_overview(
             request.project_id, 
-            request.start, 
-            request.end
+            start_date, 
+            end_date
         )
         
         if request.format.lower() == "csv":
