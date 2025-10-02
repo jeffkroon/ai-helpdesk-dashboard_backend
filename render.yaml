@@ -1,0 +1,40 @@
+services:
+  # Frontend service
+  - type: web
+    name: ai-helpdesk-frontend
+    env: node
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
+    startCommand: cd frontend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BACKEND_URL
+        fromService:
+          type: web
+          name: ai-helpdesk-backend
+          property: host
+    healthCheckPath: /
+    
+  # Backend service
+  - type: web
+    name: ai-helpdesk-backend
+    env: python
+    plan: free
+    buildCommand: cd backend && pip install -r requirements.txt
+    startCommand: cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: VOICEFLOW_API_KEY
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: ai-helpdesk-redis
+          property: connectionString
+    healthCheckPath: /health
+    
+  # Redis service
+  - type: redis
+    name: ai-helpdesk-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
