@@ -23,10 +23,12 @@ app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"]
 app.include_router(export.router, prefix="/api/export", tags=["export"])
 
 @app.get("/")
+@app.head("/")
 async def root():
     return {"message": "AI Helpdesk Dashboard API"}
 
 @app.get("/health")
+@app.head("/health")
 async def health_check():
     return {"status": "healthy"}
 

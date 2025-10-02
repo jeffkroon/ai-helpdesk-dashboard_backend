@@ -8,7 +8,14 @@ class CacheService:
     def __init__(self):
         self.redis_client = None
         if settings.redis_url:
-            self.redis_client = redis.from_url(settings.redis_url)
+            try:
+                self.redis_client = redis.from_url(settings.redis_url)
+                # Test connection
+                self.redis_client.ping()
+                print("Redis connection successful")
+            except Exception as e:
+                print(f"Redis connection failed: {e}")
+                self.redis_client = None
     
     async def get_cached_or_fetch(
         self, 
