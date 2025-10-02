@@ -21,6 +21,7 @@ services:
     name: ai-helpdesk-backend
     env: python
     plan: free
+    runtime: python-3.11
     buildCommand: cd backend && pip install -r requirements.txt
     startCommand: cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
