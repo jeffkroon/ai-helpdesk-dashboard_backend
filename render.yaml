@@ -38,3 +38,4 @@ services:
     name: ai-helpdesk-redis
     plan: free
     maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
