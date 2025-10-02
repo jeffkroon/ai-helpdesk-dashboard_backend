@@ -1,20 +1,15 @@
 {
-  "name": "ai-helpdesk-dashboard",
+  "name": "ai-helpdesk-backend",
   "version": "1.0.0",
   "description": "AI Helpdesk Dashboard - Backend with FastAPI",
   "private": true,
   "scripts": {
-    "dev:backend": "cd backend && python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
-    "build:backend": "cd backend && pip install -r requirements.txt",
-    "start:backend": "cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000",
-    "test:backend": "cd backend && python -m pytest",
-    "lint:backend": "cd backend && python -m flake8 app/"
-  },
-  "devDependencies": {
-    "concurrently": "^8.2.2"
+    "dev": "cd backend && python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
+    "start": "cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000",
+    "test": "cd backend && python -m pytest",
+    "lint": "cd backend && python -m flake8 app/"
   },
   "engines": {
-    "node": ">=18.0.0",
     "python": ">=3.9.0"
   }
 }

@@ -1,21 +1,4 @@
 services:
-  # Frontend service
-  - type: web
-    name: ai-helpdesk-frontend
-    env: node
-    plan: free
-    buildCommand: cd frontend-standalone && npm install && npm run build
-    startCommand: cd frontend-standalone && npm start
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: BACKEND_URL
-        fromService:
-          type: web
-          name: ai-helpdesk-backend
-          property: host
-    healthCheckPath: /
-    
   # Backend service
   - type: web
     name: ai-helpdesk-backend
