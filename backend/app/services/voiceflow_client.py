@@ -34,22 +34,156 @@ class VoiceflowClient:
         project_id: str, 
         start_iso: Optional[str] = None, 
         end_iso: Optional[str] = None,
-        limit: int = 250
+        limit: int = 250,
+        skip: int = 0,
+        order: str = "DESC"
     ) -> List[Dict[str, Any]]:
-        """Get transcripts from Voiceflow API v1"""
+        """Get transcripts from Voiceflow API v1 with date filtering and pagination"""
         url = f"{self.base_url}/v1/transcript/project/{project_id}"
+        
+        # Add query parameters for pagination and ordering
+        params = {
+            "take": limit,
+            "skip": skip,
+            "order": order
+        }
+        
+        # Build payload with date filters
         payload = {}
+        if start_iso:
+            payload["startDate"] = start_iso
+        if end_iso:
+            payload["endDate"] = end_iso
         
-        data = await self._request("POST", url, json=payload)
+        data = await self._request("POST", url, json=payload, params=params)
         
-        # The response structure is: {"items": [array of transcripts]}
-        items = data.get("items", [])
+        # The response structure is: {"transcripts": [array of transcripts]}
+        items = data.get("transcripts", []) or data.get("items", [])
         return items
     
     async def get_transcript_with_logs(self, transcript_id: str) -> Dict[str, Any]:
         """Get full transcript with logs"""
         url = f"{self.base_url}/v1/transcript/{transcript_id}"
         return await self._request("GET", url)
+    
+    async def get_chat_messages(self, transcript_id: str) -> List[Dict[str, Any]]:
+        """Get chat messages from a transcript"""
+        full_transcript = await self.get_transcript_with_logs(transcript_id)
+        transcript_data = full_transcript.get('transcript', {})
+        logs = transcript_data.get('logs', [])
+        
+        messages = []
+        for log in logs:
+            message_data = log.get('data', {})
+            message_type = log.get('type', 'unknown')
+            
+            # Extract text content
+            text = None
+            role = 'system'
+            
+            if message_type == 'action':
+                # User message
+                payload = message_data.get('payload', {})
+                if isinstance(payload, dict):
+                    text = payload.get('text') or payload.get('message')
+                    role = 'user'
+                else:
+                    text = str(payload)
+                    role = 'user'
+            elif message_type == 'trace':
+                # System/AI message
+                payload = message_data.get('payload', {})
+                if isinstance(payload, dict):
+                    text = payload.get('text') or payload.get('message')
+                    if text and len(text) > 50:  # Only include substantial AI responses
+                        role = 'assistant'
+                    else:
+                        continue  # Skip system traces
+                else:
+                    text = str(payload)
+                    if text and len(text) > 50:
+                        role = 'assistant'
+                    else:
+                        continue
+            
+            if text and role in ['user', 'assistant']:
+                messages.append({
+                    'type': message_type,
+                    'role': role,
+                    'text': text,
+                    'timestamp': log.get('createdAt'),
+                    'raw_data': message_data
+                })
+        
+        return messages
+    
+    async def get_transcript_analytics(
+        self, 
+        project_id: str, 
+        start_date: str, 
+        end_date: str,
+        take: int = 25,
+        skip: int = 0,
+        order: str = "DESC"
+    ) -> List[Dict[str, Any]]:
+        """Get transcript analytics with date filtering and pagination"""
+        url = f"{self.base_url}/v1/transcript/project/{project_id}"
+        
+        # Query parameters for pagination and ordering
+        params = {
+            "take": take,
+            "skip": skip,
+            "order": order
+        }
+        
+        # Request body with date filters
+        payload = {
+            "startDate": start_date,
+            "endDate": end_date
+        }
+        
+        data = await self._request("POST", url, json=payload, params=params)
+        
+        # Extract transcripts from response and process them for dashboard
+        raw_transcripts = data.get("transcripts", []) or data.get("items", [])
+        
+        # Process transcripts for dashboard display (same as get_transcripts)
+        processed_transcripts = []
+        for transcript in raw_transcripts:
+            processed = {
+                "id": transcript.get("id"),
+                "sessionID": transcript.get("sessionID"),
+                "createdAt": transcript.get("createdAt"),
+                "endedAt": transcript.get("endedAt"),
+                "duration": None,
+                "sentiment": None,
+                "resolution": None,
+                "course_recommended": None,
+                "user_question": None,
+                "ai_summary": None
+            }
+            
+            # Extract properties
+            for prop in transcript.get("properties", []):
+                if prop.get("name") == "duration":
+                    processed["duration"] = int(prop.get("value", 0))
+            
+            # Extract evaluations
+            for eval in transcript.get("evaluations", []):
+                if eval.get("name") == "Customer sentiment":
+                    processed["sentiment"] = int(eval.get("value", 3))
+                elif eval.get("name") == "Resolution achieved":
+                    processed["resolution"] = eval.get("value") == "true"
+                elif eval.get("name") == "AI course chosen":
+                    processed["course_recommended"] = eval.get("value")
+                elif eval.get("name") == "Vraag gebruiker":
+                    processed["user_question"] = eval.get("value")
+                elif eval.get("name") == "AI summary":
+                    processed["ai_summary"] = eval.get("value")
+            
+            processed_transcripts.append(processed)
+        
+        return processed_transcripts
     
     async def query_usage_v2(
         self, 
@@ -263,10 +397,12 @@ class VoiceflowClient:
         project_id: str, 
         start_date: str, 
         end_date: str,
-        limit: int = 100
+        limit: int = 100,
+        skip: int = 0,
+        order: str = "DESC"
     ) -> List[Dict[str, Any]]:
         """Get transcripts for dashboard with processed data"""
-        transcripts = await self.list_transcripts(project_id, start_date, end_date, limit)
+        transcripts = await self.list_transcripts(project_id, start_date, end_date, limit, skip, order)
         
         # Process transcripts for dashboard display
         processed_transcripts = []

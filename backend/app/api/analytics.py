@@ -125,16 +125,23 @@ async def get_comparison(request: CompareRequest):
         raise HTTPException(status_code=500, detail=f"Failed to fetch comparison data: {str(e)}")
 
 @router.get("/transcripts")
-async def get_transcripts(project_id: str, start: str, end: str, limit: int = 100):
-    """Get transcripts with caching"""
+async def get_transcripts(
+    project_id: str, 
+    start: str, 
+    end: str, 
+    limit: int = 100,
+    skip: int = 0,
+    order: str = "DESC"
+):
+    """Get transcripts with caching and pagination"""
     # Normalize date formats to ISO-8601 with time
     start_date = normalize_date_format(start)
     end_date = normalize_date_format(end)
     
-    cache_key = f"transcripts:{project_id}:{start_date}:{end_date}:{limit}"
+    cache_key = f"transcripts:{project_id}:{start_date}:{end_date}:{limit}:{skip}:{order}"
     
     async def fetch_data():
-        return await voiceflow_client.get_transcripts(project_id, start_date, end_date, limit)
+        return await voiceflow_client.get_transcript_analytics(project_id, start_date, end_date, limit, skip, order)
     
     try:
         data = await cache_service.get_cached_or_fetch(cache_key, fetch_data)
@@ -159,3 +166,17 @@ async def get_top_intents(project_id: str, start: str, end: str):
         return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch intents: {str(e)}")
+
+@router.get("/transcripts/{transcript_id}/messages")
+async def get_transcript_messages(transcript_id: str):
+    """Get chat messages from a specific transcript"""
+    cache_key = f"transcript_messages:{transcript_id}"
+    
+    async def fetch_data():
+        return await voiceflow_client.get_chat_messages(transcript_id)
+    
+    try:
+        data = await cache_service.get_cached_or_fetch(cache_key, fetch_data)
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch transcript messages: {str(e)}")
