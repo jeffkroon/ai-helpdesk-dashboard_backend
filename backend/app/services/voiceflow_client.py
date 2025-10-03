@@ -363,7 +363,7 @@ class VoiceflowClient:
                 },
                 "interactions_chart": [
                     {"date": item.get("period", ""), "interactions": item.get("count", 0)}
-                    for item in interactions[:10]  # Limit to 10 for chart
+                    for item in interactions  # Show all interactions data
                 ],
                 "top_intents": [
                     {
