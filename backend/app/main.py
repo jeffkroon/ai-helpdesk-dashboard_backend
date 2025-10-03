@@ -12,9 +12,13 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Frontend URL
+    allow_origins=[
+        "http://localhost:3000",  # Local development
+        "https://ai-dashboard-frontend-zkuc.onrender.com",  # Production frontend
+        "https://ai-helpdesk-dashboard-backend.onrender.com",  # Production backend
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
