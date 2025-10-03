@@ -95,13 +95,13 @@ class VoiceflowClient:
                 payload = message_data.get('payload', {})
                 if isinstance(payload, dict):
                     text = payload.get('text') or payload.get('message')
-                    if text and len(text) > 50:  # Only include substantial AI responses
+                    if text:  # Include all AI responses, regardless of length
                         role = 'assistant'
                     else:
-                        continue  # Skip system traces
+                        continue  # Skip empty traces
                 else:
                     text = str(payload)
-                    if text and len(text) > 50:
+                    if text:  # Include all AI responses, regardless of length
                         role = 'assistant'
                     else:
                         continue
